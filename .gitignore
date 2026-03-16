@@ -1,0 +1,7 @@
+# Fichiers d'environnement (pour cacher les futures clés API)
+.env
+
+# Dossiers systèmes et caches Python
+__pycache__/
+*.pyc
+.DS_Store
