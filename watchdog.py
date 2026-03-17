@@ -1,50 +1,84 @@
 import re
+import os
+import requests
+from dotenv import load_dotenv
+
+# Charge les variables cachées dans le fichier .env
+load_dotenv()
+API_KEY = os.getenv("ABUSEIPDB_API_KEY")
+
+def check_ip_reputation(ip):
+    """
+    Interroge l'API AbuseIPDB pour obtenir le score de malveillance d'une IP.
+    """
+    if not API_KEY:
+        return "Erreur : Clé API introuvable."
+
+    url = 'https://api.abuseipdb.com/api/v2/check'
+    querystring = {
+        'ipAddress': ip,
+        'maxAgeInDays': '90' # On vérifie les signalements des 90 derniers jours
+    }
+    headers = {
+        'Accept': 'application/json',
+        'Key': API_KEY
+    }
+
+    try:
+        # On envoie la requête à l'API
+        response = requests.get(url, headers=headers, params=querystring)
+        
+        # Si la réponse est 200 (Succès)
+        if response.status_code == 200:
+            data = response.json()
+            # On extrait juste le score de confiance en pourcentage
+            score = data['data']['abuseConfidenceScore']
+            return score
+        else:
+            return f"Erreur API ({response.status_code})"
+    except Exception as e:
+        return "Erreur de connexion"
 
 def analyze_logs(log_file_path):
     """
-    Analyse un fichier de logs SSH et compte les tentatives de connexion échouées par adresse IP.
+    Analyse un fichier de logs SSH et compte les tentatives échouées.
     """
-    # Cette expression régulière (Regex) sert à repérer une adresse IP (ex: 192.168.1.1)
     ip_pattern = r'[0-9]+(?:\.[0-9]+){3}'
-    
-    # Dictionnaire pour stocker les IP et leur nombre de tentatives (ex: {"8.8.8.8": 5})
     failed_attempts = {}
 
     try:
-        # On ouvre le fichier de logs en mode lecture ('r')
         with open(log_file_path, 'r') as file:
             for line in file:
-                # On cherche les lignes contenant l'erreur spécifique
                 if "Failed password" in line:
-                    # On extrait l'adresse IP de la ligne
                     match = re.search(ip_pattern, line)
                     if match:
                         ip = match.group()
-                        # Si l'IP est déjà dans notre dictionnaire, on ajoute +1
                         if ip in failed_attempts:
                             failed_attempts[ip] += 1
-                        # Sinon, on l'ajoute avec la valeur 1
                         else:
                             failed_attempts[ip] = 1
 
-        # --- AFFICHAGE DES RÉSULTATS ---
-        print("\n=== Rapport d'Analyse WatchDog ===")
+        print("\n=== Rapport d'Analyse WatchDog (Phase 2) ===")
         if not failed_attempts:
             print(" Aucune menace détectée.")
         
         for ip, count in failed_attempts.items():
-            # Si une IP a essayé de se connecter plus de 2 fois, on déclenche une alerte
             if count > 2:
-                print(f"[ ALERTE] {count} tentatives échouées depuis l'IP : {ip}")
+                print(f"[*] Analyse de l'IP {ip} sur AbuseIPDB en cours...")
+                score = check_ip_reputation(ip)
+                
+                # Formatage de l'alerte selon le score
+                if isinstance(score, int) and score > 0:
+                    print(f"[ ALERTE CRITIQUE] {count} tentatives depuis {ip} | Score de malveillance : {score}% ! ☠️")
+                else:
+                    print(f"[ ALERTE] {count} tentatives depuis {ip} | Score de malveillance : {score}% (Peut-être un bot non signalé)")
             else:
                 print(f"[INFO] {count} tentative(s) échouée(s) depuis l'IP : {ip}")
-        print("=====================================\n")
+        print("================================================\n")
 
     except FileNotFoundError:
-        print(f"[ERREUR] Le fichier {log_file_path} est introuvable. Vérifiez le chemin.")
+        print(f"[ERREUR] Le fichier {log_file_path} est introuvable.")
 
-# C'est ici que le script commence vraiment à s'exécuter
 if __name__ == "__main__":
-    # Chemin vers le faux fichier de logs qu'on a créé
     chemin_du_fichier = "sample_logs/auth.log"
     analyze_logs(chemin_du_fichier)
