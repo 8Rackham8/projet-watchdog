@@ -6,43 +6,59 @@ from dotenv import load_dotenv
 # Charge les variables cachées dans le fichier .env
 load_dotenv()
 API_KEY = os.getenv("ABUSEIPDB_API_KEY")
+DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL")
 
-def check_ip_reputation(ip):
+def send_discord_alert(ip, count, score):
     """
-    Interroge l'API AbuseIPDB pour obtenir le score de malveillance d'une IP.
+    Envoie une notification formatée vers un salon Discord via Webhook.
     """
-    if not API_KEY:
-        return "Erreur : Clé API introuvable."
+    if not DISCORD_WEBHOOK:
+        return
 
-    url = 'https://api.abuseipdb.com/api/v2/check'
-    querystring = {
-        'ipAddress': ip,
-        'maxAgeInDays': '90' # On vérifie les signalements des 90 derniers jours
-    }
-    headers = {
-        'Accept': 'application/json',
-        'Key': API_KEY
+    # Formatage du message pour Discord (Embed)
+    data = {
+        "username": "WatchDog Alert",
+        "avatar_url": "https://cdn-icons-png.flaticon.com/512/2097/2097945.png",
+        "content": "🚨 **NOUVELLE MENACE DÉTECTÉE** 🚨",
+        "embeds": [
+            {
+                "title": "Attaque par Brute Force SSH",
+                "description": "Un comportement suspect a été repéré dans les logs d'authentification.",
+                "color": 16711680,
+                "fields": [
+                    {"name": "🛑 IP Malveillante", "value": f"`{ip}`", "inline": True},
+                    {"name": "🔄 Tentatives", "value": str(count), "inline": True},
+                    {"name": "☠️ Score AbuseIPDB", "value": f"{score}% de dangerosité", "inline": False}
+                ],
+                "footer": {"text": "WatchDog Security - Automated SOC"}
+            }
+        ]
     }
 
     try:
-        # On envoie la requête à l'API
-        response = requests.get(url, headers=headers, params=querystring)
-        
-        # Si la réponse est 200 (Succès)
-        if response.status_code == 200:
-            data = response.json()
-            # On extrait juste le score de confiance en pourcentage
-            score = data['data']['abuseConfidenceScore']
-            return score
-        else:
-            return f"Erreur API ({response.status_code})"
+        requests.post(DISCORD_WEBHOOK, json=data)
     except Exception as e:
-        return "Erreur de connexion"
+        print(f"[ERREUR LOCALE] Problème de connexion avec Discord : {e}")
+
+def check_ip_reputation(ip):
+    """Interroge l'API AbuseIPDB pour obtenir le score de malveillance."""
+    if not API_KEY:
+        return "Clé API manquante"
+
+    url = 'https://api.abuseipdb.com/api/v2/check'
+    headers = {'Accept': 'application/json', 'Key': API_KEY}
+    querystring = {'ipAddress': ip, 'maxAgeInDays': '90'}
+
+    try:
+        response = requests.get(url, headers=headers, params=querystring)
+        if response.status_code == 200:
+            return response.json()['data']['abuseConfidenceScore']
+        return "Erreur API"
+    except:
+        return "Erreur Connexion"
 
 def analyze_logs(log_file_path):
-    """
-    Analyse un fichier de logs SSH et compte les tentatives échouées.
-    """
+    """Analyse les logs et déclenche les alertes."""
     ip_pattern = r'[0-9]+(?:\.[0-9]+){3}'
     failed_attempts = {}
 
@@ -53,29 +69,27 @@ def analyze_logs(log_file_path):
                     match = re.search(ip_pattern, line)
                     if match:
                         ip = match.group()
-                        if ip in failed_attempts:
-                            failed_attempts[ip] += 1
-                        else:
-                            failed_attempts[ip] = 1
+                        failed_attempts[ip] = failed_attempts.get(ip, 0) + 1
 
-        print("\n=== Rapport d'Analyse WatchDog (Phase 2) ===")
-        if not failed_attempts:
-            print(" Aucune menace détectée.")
+        print("\n=== 🛡️ Rapport d'Analyse WatchDog (Phase 3) ===")
         
         for ip, count in failed_attempts.items():
             if count > 2:
                 print(f"[*] Analyse de l'IP {ip} sur AbuseIPDB en cours...")
                 score = check_ip_reputation(ip)
                 
-                # Formatage de l'alerte selon le score
+                # Remis à > 0 pour la version finale
                 if isinstance(score, int) and score > 0:
-                    print(f"[ ALERTE CRITIQUE] {count} tentatives depuis {ip} | Score de malveillance : {score}% ! ☠️")
+                    print(f"[🚨 ALERTE] {count} tentatives depuis {ip} | Score : {score}% ! Envoi sur Discord...")
+                    send_discord_alert(ip, count, score)
                 else:
-                    print(f"[ ALERTE] {count} tentatives depuis {ip} | Score de malveillance : {score}% (Peut-être un bot non signalé)")
+                    print(f"[⚠️ INFO] {count} tentatives depuis {ip} | Score : {score}%")
             else:
-                print(f"[INFO] {count} tentative(s) échouée(s) depuis l'IP : {ip}")
+                print(f"[INFO] {count} tentative(s) depuis : {ip}")
+                
         print("================================================\n")
 
+    # C'est ce bloc "except" qui manquait ou qui était mal aligné !
     except FileNotFoundError:
         print(f"[ERREUR] Le fichier {log_file_path} est introuvable.")
 
