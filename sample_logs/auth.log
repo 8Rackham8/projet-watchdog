@@ -1,6 +1,24 @@
-Mar 16 10:01:22 server sshd[1234]: Accepted publickey for admin from 192.168.1.10 port 50432 ssh2
-Mar 16 10:05:13 server sshd[1245]: Failed password for root from 203.0.113.45 port 39482 ssh2
-Mar 16 10:05:15 server sshd[1245]: Failed password for root from 203.0.113.45 port 39482 ssh2
-Mar 16 10:05:18 server sshd[1245]: Failed password for root from 203.0.113.45 port 39482 ssh2
-Mar 16 10:08:42 server sshd[1260]: Failed password for invalid user admin from 8.8.8.8 port 44321 ssh2
-Mar 16 10:15:00 server sshd[1280]: Accepted password for user1 from 10.0.0.5 port 55432 ssh2
+Oct 12 03:14:15 server-prod sshd[10234]: Accepted publickey for debian69 from 192.168.1.15 port 54321 ssh2
+Oct 12 03:14:15 server-prod sshd[10234]: pam_unix(sshd:session): session opened for user debian69 by (uid=0)
+Oct 12 03:15:01 server-prod CRON[10240]: pam_unix(cron:session): session opened for user root by (uid=0)
+Oct 12 03:15:01 server-prod CRON[10240]: pam_unix(cron:session): session closed for user root
+Oct 12 03:30:22 server-prod sshd[10555]: Invalid user admin from 198.51.100.77 port 48212
+Oct 12 03:30:24 server-prod sshd[10555]: Failed password for invalid user admin from 198.51.100.77 port 48212 ssh2
+Oct 12 03:30:27 server-prod sshd[10555]: Failed password for invalid user admin from 198.51.100.77 port 48212 ssh2
+Oct 12 03:30:28 server-prod sshd[10555]: Connection closed by invalid user admin 198.51.100.77 port 48212 [preauth]
+Oct 12 03:45:11 server-prod sshd[10892]: Invalid user root from 185.220.101.46 port 39482
+Oct 12 03:45:14 server-prod sshd[10892]: Failed password for invalid user root from 185.220.101.46 port 39482 ssh2
+Oct 12 03:45:17 server-prod sshd[10892]: Failed password for invalid user root from 185.220.101.46 port 39482 ssh2
+Oct 12 03:45:20 server-prod sshd[10892]: Failed password for invalid user root from 185.220.101.46 port 39482 ssh2
+Oct 12 03:45:23 server-prod sshd[10892]: Failed password for invalid user root from 185.220.101.46 port 39482 ssh2
+Oct 12 04:00:01 server-prod CRON[11002]: pam_unix(cron:session): session opened for user root by (uid=0)
+Oct 12 04:00:01 server-prod CRON[11002]: pam_unix(cron:session): session closed for user root
+Oct 12 04:12:05 server-prod sshd[11021]: Failed password for debian69 from 203.0.113.12 port 50211 ssh2
+Oct 12 04:22:15 server-prod sshd[11154]: Invalid user oracle from 141.98.10.15 port 55555
+Oct 12 04:22:18 server-prod sshd[11154]: Failed password for invalid user oracle from 141.98.10.15 port 55555 ssh2
+Oct 12 04:22:21 server-prod sshd[11154]: Failed password for invalid user oracle from 141.98.10.15 port 55555 ssh2
+Oct 12 04:22:24 server-prod sshd[11154]: Failed password for invalid user oracle from 141.98.10.15 port 55555 ssh2
+Oct 12 04:22:27 server-prod sshd[11154]: Failed password for invalid user oracle from 141.98.10.15 port 55555 ssh2
+Oct 12 04:22:30 server-prod sshd[11154]: Failed password for invalid user oracle from 141.98.10.15 port 55555 ssh2
+Oct 12 04:22:33 server-prod sshd[11154]: Failed password for invalid user oracle from 141.98.10.15 port 55555 ssh2
+Oct 12 05:14:15 server-prod sshd[10234]: pam_unix(sshd:session): session closed for user debian69
